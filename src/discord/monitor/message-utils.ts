@@ -8,6 +8,7 @@ export type DiscordMediaInfo = {
   path: string;
   contentType?: string;
   placeholder: string;
+  sourceUrl?: string; // original Discord CDN URL before download
 };
 
 export type DiscordChannelInfo = {
@@ -230,6 +231,7 @@ async function appendResolvedMediaFromAttachments(params: {
         path: saved.path,
         contentType: saved.contentType,
         placeholder: inferPlaceholder(attachment),
+        sourceUrl: attachment.url,
       });
     } catch (err) {
       const id = attachment.id ?? attachment.url;
@@ -495,7 +497,7 @@ function formatDiscordSnapshotAuthor(
 }
 
 export function buildDiscordMediaPayload(
-  mediaList: Array<{ path: string; contentType?: string }>,
+  mediaList: Array<{ path: string; contentType?: string; sourceUrl?: string }>,
 ): {
   MediaPath?: string;
   MediaType?: string;
@@ -503,10 +505,13 @@ export function buildDiscordMediaPayload(
   MediaPaths?: string[];
   MediaUrls?: string[];
   MediaTypes?: string[];
+  AttachmentUrl?: string;
+  AttachmentUrls?: string[];
 } {
   const first = mediaList[0];
   const mediaPaths = mediaList.map((media) => media.path);
   const mediaTypes = mediaList.map((media) => media.contentType).filter(Boolean) as string[];
+  const cdnUrls = mediaList.map((media) => media.sourceUrl).filter((u): u is string => Boolean(u));
   return {
     MediaPath: first?.path,
     MediaType: first?.contentType,
@@ -514,5 +519,7 @@ export function buildDiscordMediaPayload(
     MediaPaths: mediaPaths.length > 0 ? mediaPaths : undefined,
     MediaUrls: mediaPaths.length > 0 ? mediaPaths : undefined,
     MediaTypes: mediaTypes.length > 0 ? mediaTypes : undefined,
+    AttachmentUrl: cdnUrls[0],
+    AttachmentUrls: cdnUrls.length > 0 ? cdnUrls : undefined,
   };
 }
