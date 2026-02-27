@@ -82,6 +82,8 @@ export type MsgContext = {
   ThreadLabel?: string;
   MediaPath?: string;
   MediaUrl?: string;
+  AttachmentUrl?: string; // original CDN URL for first attachment (before download)
+  AttachmentUrls?: string[]; // original CDN URLs for all attachments
   MediaType?: string;
   MediaDir?: string;
   MediaPaths?: string[];
