@@ -339,11 +339,15 @@ export const discordPlugin: ChannelPlugin<ResolvedDiscordAccount> = {
       });
       return { channel: "discord", ...result };
     },
-    sendPoll: async ({ to, poll, accountId, silent }) =>
-      await getDiscordRuntime().channel.discord.sendPollDiscord(to, poll, {
+    sendPoll: async ({ to, poll, accountId, threadId, silent }) => {
+      // Route to the thread channel when threadId is set; Discord threads are addressed by channel ID.
+      const target =
+        threadId != null && String(threadId).trim() ? `channel:${String(threadId).trim()}` : to;
+      return await getDiscordRuntime().channel.discord.sendPollDiscord(target, poll, {
         accountId: accountId ?? undefined,
         silent: silent ?? undefined,
-      }),
+      });
+    },
   },
   status: {
     defaultRuntime: {
