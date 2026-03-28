@@ -950,6 +950,7 @@ async function dispatchDiscordCommandInteraction(params: {
     await deliverDiscordInteractionReply({
       interaction,
       payload: pluginReply,
+      mediaMaxBytes: (discordConfig?.mediaMaxMb ?? 8) * 1024 * 1024,
       textLimit: resolveTextChunkLimit(cfg, "discord", accountId, {
         fallbackLimit: 2000,
       }),
@@ -1049,6 +1050,7 @@ async function dispatchDiscordCommandInteraction(params: {
     accountId: effectiveRoute.accountId,
   });
   const mediaLocalRoots = getAgentScopedMediaLocalRoots(cfg, effectiveRoute.agentId);
+  const mediaMaxBytes = (discordConfig?.mediaMaxMb ?? 8) * 1024 * 1024;
 
   let didReply = false;
   const dispatchResult = await dispatchReplyWithDispatcherImpl({
@@ -1066,6 +1068,7 @@ async function dispatchDiscordCommandInteraction(params: {
             interaction,
             payload,
             mediaLocalRoots,
+            mediaMaxBytes,
             textLimit: resolveTextChunkLimit(cfg, "discord", accountId, {
               fallbackLimit: 2000,
             }),
@@ -1151,12 +1154,13 @@ async function deliverDiscordInteractionReply(params: {
   interaction: CommandInteraction | ButtonInteraction | StringSelectMenuInteraction;
   payload: ReplyPayload;
   mediaLocalRoots?: readonly string[];
+  mediaMaxBytes?: number;
   textLimit: number;
   maxLinesPerMessage?: number;
   preferFollowUp: boolean;
   chunkMode: "length" | "newline";
 }) {
-  const { interaction, payload, textLimit, maxLinesPerMessage, preferFollowUp, chunkMode } = params;
+  const { interaction, payload, textLimit, maxLinesPerMessage, preferFollowUp, chunkMode, mediaMaxBytes } = params;
   const reply = resolveSendableOutboundReplyParts(payload);
   const discordData = payload.channelData?.discord as
     | { components?: TopLevelComponents[] }
@@ -1213,7 +1217,9 @@ async function deliverDiscordInteractionReply(params: {
       reply.mediaUrls.map(async (url) => {
         const loaded = await loadWebMedia(url, {
           localRoots: params.mediaLocalRoots,
-          preserveWebp: true, preserveAvif: true,
+          maxBytes: mediaMaxBytes,
+          preserveWebp: true,
+          preserveAvif: true,
         });
         return {
           name: loaded.fileName ?? "upload",
